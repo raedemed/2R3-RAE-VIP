@@ -165,9 +165,10 @@ body{font-family:'Cairo',sans-serif;background:#050810;color:#edf2ff;min-height:
   </div>
 
   <div class="section">
-    <h3>🔔 تليجرام (تنبيهات + تقارير)</h3><p style="color:#9aa8c7;font-size:12px;margin-bottom:8px">القناة العامة: https://t.me/Ech0_k</p>
+    <h3>🔔 تليجرام (تنبيهات + تقارير)</h3><p style="color:#9aa8c7;font-size:12px;margin-bottom:8px">ضع بيانات البوت والقناة التي تريد استقبال الرسائل فيها.</p>
     <div class="row"><label>Bot Token</label><input id="tgToken" type="password" placeholder="123456:ABC-..."></div>
-    <div class="row"><label>Chat ID</label><input id="tgChat" placeholder="123456789"></div>
+    <div class="row"><label>Chat ID للقناة/الجروب</label><input id="tgChat" placeholder="-1001234567890"></div>
+    <div class="row"><label>رابط القناة</label><input id="tgChannelLink" placeholder="https://t.me/اسم_القناة"></div>
     <div class="row"><label>📢 إرسال التوقعات تلقائيًا</label><label class="switch"><input id="tgPredEnabled" type="checkbox"><span class="slider"></span></label></div>
     <div class="row"><label>الحد الأدنى للثقة</label><input id="tgPredMin" type="number" min="1" max="99" value="75"></div>
     <div class="row"><label>الحد الأقصى يوميًا</label><input id="tgPredDaily" type="number" min="1" max="100" value="20"></div>
@@ -353,7 +354,7 @@ async function loadConfig(){
   $('#cfgInboxEn').checked=!!(d.inbox&&d.inbox.active); $('#cfgInboxText').value=(d.inbox&&d.inbox.text)||'';
   $('#hidMatches').value=(d.hiddenMatches||[]).join(', '); $('#hidLeagues').value=(d.hiddenLeagues||[]).join(', ');
   const g=d.guide||{}; $('#gTitle').value=g.title||'';$('#gS1').value=g.s1||'';$('#gS2').value=g.s2||'';$('#gS3').value=g.s3||'';$('#gWarn').value=g.warn||'';$('#gBtn').value=g.btn||'';
-  const t=await getTg(); $('#tgToken').value=t.token||''; $('#tgChat').value=t.chatId||''; const ta=d.telegramAuto||{}; $('#tgPredEnabled').checked=ta.enabled===true; $('#tgPredMin').value=ta.minConfidence||75; $('#tgPredDaily').value=ta.dailyLimit||20; $('#tgPredTitle').value=ta.title||'🏆 RA3D BET | توقع جديد'; $('#tgPredNote').value=ta.note||'التوقعات إحصائية وليست ضمانًا للنتيجة.';
+  const t=await getTg(); $('#tgToken').value=t.token||''; $('#tgChat').value=t.chatId||''; $('#tgChannelLink').value=t.channelLink||''; const ta=d.telegramAuto||{}; $('#tgPredEnabled').checked=ta.enabled===true; $('#tgPredMin').value=ta.minConfidence||75; $('#tgPredDaily').value=ta.dailyLimit||20; $('#tgPredTitle').value=ta.title||'🏆 RA3D BET | توقع جديد'; $('#tgPredNote').value=ta.note||'التوقعات إحصائية وليست ضمانًا للنتيجة.';
 }
 async function loadSuggestions(){
   const snap=await db.collection('suggestions').orderBy('createdAt','desc').limit(100).get();
@@ -465,7 +466,7 @@ $('#guideSave').onclick=async()=>{
 };
 $('#tgPredSave').onclick=async()=>{await adminWrite(()=>db.collection('config').doc('settings').set({telegramAuto:{enabled:$('#tgPredEnabled').checked,minConfidence:Math.min(99,Math.max(1,Number($('#tgPredMin').value)||75)),dailyLimit:Math.min(100,Math.max(1,Number($('#tgPredDaily').value)||20)),title:$('#tgPredTitle').value.trim()||'🏆 RA3D BET | توقع جديد',note:$('#tgPredNote').value.trim()||'التوقعات إحصائية وليست ضمانًا للنتيجة.'},updatedAt:Date.now()},{merge:true}),'حفظ إعدادات إرسال التوقعات',$('#tgPredSave'));};
 $('#tgSave').onclick=async()=>{
-  const ok=await adminWrite(()=>db.collection('private').doc('telegram').set({token:$('#tgToken').value.trim(),chatId:$('#tgChat').value.trim(),channelLink:'https://t.me/Ech0_k'},{merge:true}),'تحديث إعدادات تليجرام',$('#tgSave'));if(ok)tgCache=null;
+  const ok=await adminWrite(()=>db.collection('private').doc('telegram').set({token:$('#tgToken').value.trim(),chatId:$('#tgChat').value.trim(),channelLink:$('#tgChannelLink').value.trim()},{merge:true}),'تحديث إعدادات تليجرام',$('#tgSave'));if(ok)tgCache=null;
 };
 $('#tgTest').onclick=async()=>{const ok=await tgSend('✅ رسالة اختبار من لوحة 𝙍𝘼𝟯𝘿 𝘽𝙀𝙏');alert(ok?'وصلت؟ ✅':'فشل ❌');};
 $('#tgReport').onclick=sendReport;

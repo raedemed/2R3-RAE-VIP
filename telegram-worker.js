@@ -52,7 +52,7 @@ async function main() {
   const telegram = privateSnap.data() || {};
   const token = telegram.token || process.env.TELEGRAM_BOT_TOKEN;
   const chatId = telegram.chatId || process.env.TELEGRAM_CHAT_ID;
-  if (!token || !chatId) throw new Error('Telegram bot settings are missing');
+  if (!token || !chatId) throw new Error('Telegram bot settings are missing: save Bot Token and Chat ID from the admin panel');
 
   const dailyLimit = Math.max(1, Number(cfg.dailyLimit || 20));
   const day = new Date().toISOString().slice(0, 10);
