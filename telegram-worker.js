@@ -41,6 +41,18 @@ const db = admin.firestore();
 function esc(value) {
   return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+function confidenceBar(value) {
+  const n = Math.max(0, Math.min(100, Number(value) || 0));
+  const filled = Math.round(n / 20);
+  return '█'.repeat(filled) + '░'.repeat(5 - filled);
+}
+function predictionLines(items) {
+  if (!Array.isArray(items) || !items.length) return '';
+  return items.map((item, index) => {
+    const prob = Math.max(0, Math.min(100, Number(item.prob) || 0));
+    return `${index + 1}. <b>${esc(item.label)}</b>\n   <code>${esc(item.text)}</code>  <b>${prob}%</b> <i>${confidenceBar(prob)}</i>`;
+  }).join('\n');
+}
 
 async function main() {
   const settingsSnap = await db.collection('config').doc('settings').get();
@@ -77,7 +89,8 @@ async function main() {
     const x = item.data();
     const title = cfg.title || '🏆 RA3D BET | توقع جديد';
     const note = cfg.note || 'التوقعات إحصائية وليست ضمانًا للنتيجة.';
-    const text = `<b>${esc(title)}</b>\n\n⚽ <b>المباراة</b>\n<code>${esc(x.home)} × ${esc(x.away)}</code>\n\n<blockquote><b>🎯 التوقع:</b> ${esc(x.prediction)}</blockquote>\n\n<b>📊 الثقة:</b> ${esc(x.confidence)}%\n🕘 الموعد: ${esc(x.date)}\n🏆 البطولة: ${esc(x.league)}\n\n<i>${esc(note)}</i>\n\n🔗 <a href="https://raedemed.github.io/RA3D-BET-VIP/">عرض التفاصيل</a>`;
+    const allPredictions = predictionLines(x.predictions);
+    const text = `<b>╔══════════════════╗</b>\n<b>   ${esc(title)}   </b>\n<b>╚══════════════════╝</b>\n\n⚽ <b>مباراة اليوم</b>\n<code>${esc(x.home)}  ×  ${esc(x.away)}</code>\n🏆 ${esc(x.league)}\n🕘 ${esc(x.date)}\n\n<blockquote>🛡️ <b>التوقع الأضمن</b>\n<code>${esc(x.prediction)}</code>\n📊 <b>الثقة: ${esc(x.confidence)}%</b>\n<i>${confidenceBar(x.confidence)}</i></blockquote>\n\n<b>📋 كل التوقعات والأسواق</b>\n${allPredictions || '<i>لا توجد أسواق إضافية.</i>'}\n\n<b>━━━━━━━━━━━━━━━━</b>\n<i>⚠️ ${esc(note)}</i>\n🔗 <a href="https://raedemed.github.io/2R3-RAE-VIP/">عرض التفاصيل كاملة</a>\n<b>𝙍𝘼𝟯𝘿 𝘽𝙀𝙏 • VIP</b>`;
     const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true })
