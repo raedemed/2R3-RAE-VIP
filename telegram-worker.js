@@ -1,7 +1,15 @@
 const admin = require('firebase-admin');
 
 const rawServiceAccount = String(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '').trim();
-const serviceAccount = JSON.parse(rawServiceAccount.startsWith('{')
+function parseServiceAccount(raw) {
+  try { return JSON.parse(raw); } catch (_) {}
+  const match = raw.match(/"private_key"\s*:\s*"([\s\S]*?)"\s*,\s*"client_email"/);
+  if (!match) throw new Error('Invalid Firebase service-account JSON');
+  const fixedKey = match[1].replace(/\\n/g, '\n').replace(/\r?\n/g, '\n');
+  const repaired = raw.replace(match[0], `"private_key":${JSON.stringify(fixedKey)},"client_email"`);
+  return JSON.parse(repaired);
+}
+const serviceAccount = parseServiceAccount(rawServiceAccount.startsWith('{')
   ? rawServiceAccount
   : Buffer.from(rawServiceAccount, 'base64').toString('utf8'));
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
