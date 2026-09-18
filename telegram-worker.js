@@ -2,12 +2,25 @@ const admin = require('firebase-admin');
 
 const rawServiceAccount = String(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '').trim();
 function parseServiceAccount(raw) {
-  try { return JSON.parse(raw); } catch (_) {}
-  const match = raw.match(/"private_key"\s*:\s*"([\s\S]*?)"\s*,\s*"client_email"/);
-  if (!match) throw new Error('Invalid Firebase service-account JSON');
-  const fixedKey = match[1].replace(/\\n/g, '\n').replace(/\r?\n/g, '\n');
-  const repaired = raw.replace(match[0], `"private_key":${JSON.stringify(fixedKey)},"client_email"`);
-  return JSON.parse(repaired);
+  let account;
+  try { account = JSON.parse(raw); } catch (_) {
+    const match = raw.match(/"private_key"\s*:\s*"([\s\S]*?)"\s*,\s*"client_email"/);
+    if (!match) throw new Error('Invalid Firebase service-account JSON');
+    const fixedKey = match[1].replace(/\\n/g, '\n').replace(/\r?\n/g, '\n');
+    const repaired = raw.replace(match[0], `"private_key":${JSON.stringify(fixedKey)},"client_email"`);
+    account = JSON.parse(repaired);
+  }
+  if (!account || typeof account !== 'object' || !account.private_key || !account.client_email) {
+    throw new Error('Firebase service-account JSON is missing private_key or client_email');
+  }
+  // GitHub secrets are sometimes saved with literal "\\n" sequences or CRLFs.
+  // Normalize both forms before firebase-admin hands the key to OpenSSL.
+  account.private_key = String(account.private_key)
+    .replace(/\\n/g, '\n')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .trim() + '\n';
+  return account;
 }
 const serviceAccount = parseServiceAccount(rawServiceAccount.startsWith('{')
   ? rawServiceAccount
