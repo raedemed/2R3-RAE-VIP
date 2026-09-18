@@ -1,0 +1,8 @@
+{
+  "name": "ra3d-bet-telegram-worker",
+  "private": true,
+  "version": "1.0.0",
+  "type": "commonjs",
+  "scripts": { "send": "node telegram-worker.js" },
+  "dependencies": { "firebase-admin": "^13.0.2" }
+}

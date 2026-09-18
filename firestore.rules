@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null &&
+        (request.auth.token.email == 'admin@r3raebet.app' ||
+         request.auth.token.email == 'novaa118n@gmail.com');
+    }
+
+    match /config/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /private/{doc} { allow read, write: if isAdmin(); }
+
+    // Legacy telemetry kept writable so the existing app remains functional.
+    match /counters/{doc} { allow read, write: if true; }
+    match /daily/{doc} { allow read, write: if true; }
+    match /sessions/{doc} { allow read: if isAdmin(); allow write: if true; }
+    match /presence/{doc} { allow read: if isAdmin(); allow write: if true; }
+    match /matchViews/{doc} { allow read: if isAdmin(); allow write: if true; }
+    match /leagueViews/{doc} { allow read: if isAdmin(); allow write: if true; }
+
+    match /suggestions/{doc} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+    match /alerts/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /telegramQueue/{doc} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+    match /adminLog/{doc} { allow read, write: if isAdmin(); }
+
+    // VIP: users can look up a code and consume it once; admins manage codes.
+    match /vipCodes/{code} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        resource.data.used != true &&
+        resource.data.status == 'available' &&
+        request.resource.data.used == true &&
+        request.resource.data.status == 'available' &&
+        request.resource.data.days == resource.data.days &&
+        request.resource.data.code == resource.data.code &&
+        request.resource.data.usedBy is string
+      );
+    }
+  }
+}

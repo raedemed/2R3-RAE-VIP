@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>لوحة تحكم 𝙍𝘼𝟯𝘿 𝘽𝙀𝙏</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Cairo',sans-serif;background:#050810;color:#edf2ff;min-height:100vh}
+.hidden{display:none!important}
+.login-screen{position:fixed;inset:0;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at top,rgba(34,197,94,.1),transparent 40%),#050810}
+.login-box{width:min(400px,100%);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:28px 24px;text-align:center}
+.login-box h1{font-size:22px;margin-bottom:6px}.login-box h1 span{color:#fbbf24}
+.login-box p{color:#9aa8c7;font-size:13px;margin-bottom:20px}
+.login-box input{width:100%;padding:12px 14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);border-radius:12px;color:#fff;margin-bottom:10px;outline:none;font-family:inherit}
+.login-box button{width:100%;padding:13px;border:0;border-radius:12px;background:linear-gradient(135deg,#22c55e,#38bdf8);color:#04120a;font-weight:800;cursor:pointer;font-size:15px;margin-top:8px}
+.err{color:#fca5a5;font-size:12px;margin-top:8px;min-height:18px}
+.admin{padding:16px;max-width:1200px;margin:0 auto}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:18px;margin-bottom:16px;flex-wrap:wrap}
+.top h2{font-size:17px}.top h2 span{color:#fbbf24}
+.top button{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.3);padding:8px 14px;border-radius:12px;font-weight:700;cursor:pointer}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+.card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:14px}
+.card .label{color:#9aa8c7;font-size:11px;margin-bottom:5px}
+.card .value{font-size:24px;font-weight:800;color:#22c55e}
+.card .value.blue{color:#38bdf8}.card .value.gold{color:#fbbf24}.card .value.pink{color:#f472b6}.card .value.red{color:#f87171}
+.health{display:flex;gap:8px;align-items:center;padding:10px 14px;border-radius:14px;margin-bottom:16px;font-size:12px;font-weight:700;flex-wrap:wrap}
+.health.ok{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:#86efac}
+.health.down{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
+.section{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:16px;margin-bottom:16px}
+.section h3{margin-bottom:12px;font-size:14px;color:#fbbf24}
+.row{display:flex;gap:10px;align-items:center;margin-bottom:9px;flex-wrap:wrap}
+.row label{min-width:110px;font-size:12px;color:#9aa8c7}
+.row input,.row textarea{flex:1;padding:9px 12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);border-radius:10px;color:#fff;outline:none;font-family:inherit;min-width:0}
+.row textarea{min-height:56px;resize:vertical}
+.switch{position:relative;width:44px;height:24px;flex:none}
+.switch input{opacity:0}
+.slider{position:absolute;inset:0;border-radius:99px;background:rgba(255,255,255,.15);transition:.25s;cursor:pointer}
+.slider:before{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;right:3px;transition:.25s}
+.switch input:checked+.slider{background:#22c55e}
+.switch input:checked+.slider:before{transform:translateX(-18px)}
+.save-btn{width:100%;padding:12px;border:0;border-radius:12px;background:linear-gradient(135deg,#22c55e,#38bdf8);color:#04120a;font-weight:800;cursor:pointer;font-size:14px;margin-top:8px}
+.save-btn.saved{background:#16a34a;color:#fff}
+.btn-s{padding:8px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-size:12px;font-weight:700;cursor:pointer}
+.btn-s.green{background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.35);color:#86efac}
+.btn-s.blue{background:rgba(56,189,248,.15);border-color:rgba(56,189,248,.35);color:#7dd3fc}
+.btn-s.red{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.35);color:#fca5a5}
+.btn-s.gold{background:rgba(251,191,36,.15);border-color:rgba(251,191,36,.35);color:#fde68a}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:800px){.two{grid-template-columns:1fr}}
+.list-item{display:flex;justify-content:space-between;gap:8px;padding:9px 12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);border-radius:12px;margin-bottom:7px;font-size:12px;font-weight:700;flex-wrap:wrap}
+.list-item b{color:#e2e8f0}.list-item span{color:#9aa8c7}
+.chart-wrap{position:relative;height:200px}
+.sugg-item{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;margin-bottom:9px}
+.sugg-item.read{opacity:.65}
+.sugg-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap}
+.sugg-head b{font-size:13px}.sugg-head small{color:#9aa8c7;font-size:11px}
+.sugg-stars{color:#fbbf24;font-size:13px}
+.sugg-msg{font-size:12.5px;line-height:1.7;color:#e2e8f0;margin:5px 0}
+.sugg-actions{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+.mk-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:6px 0}
+.mk-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 11px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;font-size:11.5px;font-weight:700}
+.ext-row{display:flex;gap:8px;margin-bottom:7px}
+.ext-row input{flex:1;padding:8px 10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);border-radius:9px;color:#fff;outline:none;font-family:inherit;font-size:12px}
+.log-item{font-size:11.5px;color:#9aa8c7;padding:7px 10px;border-right:3px solid rgba(56,189,248,.4);background:rgba(255,255,255,.03);border-radius:8px;margin-bottom:6px}
+.log-item b{color:#7dd3fc}
+</style>
+</head>
+<body>
+<div id="loginScreen" class="login-screen">
+  <div class="login-box">
+    <h1>𝙍𝘼𝟯𝘿 <span>𝘽𝙀𝙏</span></h1>
+    <p>لوحة التحكم الإدارية</p>
+    <input id="loginEmail" type="email" placeholder="الإيميل" value="novaa118n@gmail.com">
+    <input id="loginPass" type="password" placeholder="كلمة المرور">
+    <button id="loginBtn">دخول</button>
+    <div id="loginErr" class="err"></div>
+  </div>
+</div>
+
+<div id="adminApp" class="admin hidden">
+  <div class="top">
+    <h2>👑 𝙍𝘼𝟯𝘿 <span>𝘽𝙀𝙏</span> — مركز القيادة</h2>
+    <div><span id="adminEmail" style="color:#9aa8c7;font-size:11px;margin-left:8px"></span><button onclick="doSignOut()">خروج</button></div>
+  </div>
+
+  <div class="cards">
+    <div class="card"><div class="label">👥 زيارات كلية</div><div class="value" id="cVisits">0</div></div>
+    <div class="card"><div class="label">👁️ مشاهدات الرهانات</div><div class="value blue" id="cBets">0</div></div>
+    <div class="card"><div class="label">📥 تحميلات</div><div class="value gold" id="cDl">0</div></div>
+    <div class="card"><div class="label">🟢 أونلاين دلوقتي</div><div class="value" id="cOnline">0</div></div>
+    <div class="card"><div class="label"> جدد اليوم</div><div class="value blue" id="cNew">0</div></div>
+    <div class="card"><div class="label">🔄 عائدون اليوم</div><div class="value pink" id="cRet">0</div></div>
+    <div class="card"><div class="label">⭐ متوسط التقييم</div><div class="value gold" id="cRate">-</div></div>
+    <div class="card"><div class="label">📬 اقتراحات جديدة</div><div class="value pink" id="cSugg">0</div></div>
+  </div>
+
+  <div id="healthBar" class="health ok">✅ المصادر سليمة</div>
+
+  <div class="section"><h3>📈 آخر 7 أيام (زيارات + مشاهدات رهانات)</h3><div class="chart-wrap"><canvas id="chartWeek"></canvas></div></div>
+
+  <div class="two">
+    <div class="section"><h3>🏆 الأكثر مشاهدة (مباريات)</h3><div id="topMatches"></div></div>
+    <div class="section"><h3>🏆 الأكثر مشاهدة (دوريات)</h3><div id="topLeagues"></div></div>
+  </div>
+
+  <div class="two">
+    <div class="section"><h3>🌍 البلدان (آخر 300 جلسة)</h3><div id="geoList"></div></div>
+    <div class="section"><h3>📱 الأجهزة</h3><div id="devList"></div></div>
+  </div>
+
+  <div class="section">
+    <h3>🎛️ التحكم عن بُعد في التطبيق</h3>
+    <div class="row"><label>وضع الصيانة</label><label class="switch"><input id="cfgMaint" type="checkbox"><span class="slider"></span></label></div>
+    <div class="row"><label>رسالة الصيانة</label><input id="cfgMaintMsg"></div>
+    <div class="row"><label>البانر الإعلاني</label><input id="cfgBanner" placeholder="فاضي = مخفي"></div>
+    <div class="row"><label>إخفاء نافذة الإرشاد</label><label class="switch"><input id="cfgHideGuide" type="checkbox"><span class="slider"></span></label></div>
+    <div class="row"><label>👑 تفعيل وضع VIP</label><label class="switch"><input id="cfgVip" type="checkbox"><span class="slider"></span></label></div>
+    <div class="row"><label>💚 زر الدعم مفعل</label><label class="switch"><input id="cfgSupEn" type="checkbox"><span class="slider"></span></label></div>
+    <div class="row"><label>نص زر الدعم</label><input id="cfgSupText" placeholder="💚 ادعمنا"></div>
+    <div class="row"><label>رابط الدعم</label><input id="cfgSupLink" placeholder="https://..."></div>
+    <label style="display:block;margin:8px 0 5px;color:#9aa8c7;font-size:12px">أسواق معطلة مؤقتاً:</label>
+    <div class="mk-grid">
+      <div class="mk-row"><span>⚽ أهداف 2</span><label class="switch"><input data-mk="goals" type="checkbox"><span class="slider"></span></label></div>
+      <div class="mk-row"><span>🛡️ أهداف 1.5</span><label class="switch"><input data-mk="safe" type="checkbox"><span class="slider"></span></label></div>
+      <div class="mk-row"><span>🚩 ركنيات</span><label class="switch"><input data-mk="corners" type="checkbox"><span class="slider"></span></label></div>
+      <div class="mk-row"><span>🥅 BTTS</span><label class="switch"><input data-mk="btts" type="checkbox"><span class="slider"></span></label></div>
+      <div class="mk-row"><span>🟨 بطاقات 4.5</span><label class="switch"><input data-mk="cards" type="checkbox"><span class="slider"></span></label></div>
+      <div class="mk-row"><span>🛡️ بطاقات 5.5</span><label class="switch"><input data-mk="safeCards" type="checkbox"><span class="slider"></span></label></div>
+    </div>
+    <button class="save-btn" id="cfgSave">حفظ الإعدادات الأساسية</button>
+  </div>
+
+  <div class="section">
+    <h3>📢 رسالة الإدارة داخل التطبيق (Inbox)</h3>
+    <div class="row"><label>مفعلة</label><label class="switch"><input id="cfgInboxEn" type="checkbox"><span class="slider"></span></label></div>
+    <div class="row"><label>نص الرسالة</label><textarea id="cfgInboxText" placeholder="مثال: تحديث جديد الليلة الساعة 10 يا وحوش 🔥"></textarea></div>
+    <button class="save-btn" id="inboxSave">إرسال الرسالة للمستخدمين</button>
+  </div>
+
+  <div class="section">
+    <h3>⭐ مباراة اليوم + الإخفاء</h3>
+    <div class="row"><label>فريق 1 (مثبت)</label><input id="pinHome" placeholder="الأهلي"></div>
+    <div class="row"><label>فريق 2 (مثبت)</label><input id="pinAway" placeholder="الزمالك"></div>
+    <div class="row"><button class="btn-s gold" id="pinSet">📌 تثبيت كمباراة اليوم</button><button class="btn-s red" id="pinClear">إلغاء التثبيت</button></div>
+    <div class="row"><label>مباريات مخفية</label><input id="hidMatches" placeholder="اهلي|زمالك, ريال|بارسا (بصيغة مفتاح المباراة)"></div>
+    <div class="row"><label>دوريات مخفية</label><input id="hidLeagues" placeholder="egy.1, ksa.1 (سلج الدوري)"></div>
+    <button class="save-btn" id="hideSave">حفظ الإخفاء</button>
+  </div>
+
+  <div class="section">
+    <h3>✏️ نصوص نافذة الإرشادات</h3>
+    <div class="row"><label>العنوان</label><input id="gTitle" placeholder="إزاي تاخد التوقع الصح؟"></div>
+    <div class="row"><label>الخطوة 1</label><textarea id="gS1"></textarea></div>
+    <div class="row"><label>الخطوة 2</label><textarea id="gS2"></textarea></div>
+    <div class="row"><label>الخطوة 3</label><textarea id="gS3"></textarea></div>
+    <div class="row"><label>التحذير</label><textarea id="gWarn"></textarea></div>
+    <div class="row"><label>نص الزرار</label><input id="gBtn" placeholder="يلا نبدأ ⚽"></div>
+    <button class="save-btn" id="guideSave">حفظ النصوص</button>
+  </div>
+
+  <div class="section">
+    <h3>🔔 تليجرام (تنبيهات + تقارير)</h3><p style="color:#9aa8c7;font-size:12px;margin-bottom:8px">القناة العامة: https://t.me/Ech0_k</p>
+    <div class="row"><label>Bot Token</label><input id="tgToken" type="password" placeholder="123456:ABC-..."></div>
+    <div class="row"><label>Chat ID</label><input id="tgChat" placeholder="123456789"></div>
+    <div class="row"><label>📢 إرسال التوقعات تلقائيًا</label><label class="switch"><input id="tgPredEnabled" type="checkbox"><span class="slider"></span></label></div>
+    <div class="row"><label>الحد الأدنى للثقة</label><input id="tgPredMin" type="number" min="1" max="99" value="75"></div>
+    <div class="row"><label>الحد الأقصى يوميًا</label><input id="tgPredDaily" type="number" min="1" max="100" value="20"></div>
+    <div class="row"><label>عنوان الرسالة</label><input id="tgPredTitle" value="🏆 RA3D BET | توقع جديد"></div>
+    <div class="row"><label>ملاحظة أسفل الرسالة</label><input id="tgPredNote" value="التوقعات إحصائية وليست ضمانًا للنتيجة."></div>
+    <div class="row"><label>تنبيه اقتراحات فوري</label><label class="switch"><input id="tgAutoSugg" type="checkbox" checked><span class="slider"></span></label>
+      <label>تنبيه أعطال فوري</label><label class="switch"><input id="tgAutoAlert" type="checkbox" checked><span class="slider"></span></label>
+      <label>تقرير يومي تلقائي</label><label class="switch"><input id="tgAutoReport" type="checkbox" checked><span class="slider"></span></label></div>
+    <div class="row"><button class="btn-s blue" id="tgPredSave">حفظ إعدادات إرسال التوقعات</button><button class="btn-s blue" id="tgSave">حفظ إعدادات تليجرام</button><button class="btn-s green" id="tgTest">📨 رسالة اختبار</button><button class="btn-s gold" id="tgReport">🌅 ابعت تقرير دلوقتي</button></div>
+    <div id="tgPredStatus" style="margin-top:10px;color:#9aa8c7;font-size:12px">جاري تحميل سجل الإرسال...</div>
+  </div>
+
+  <div class="section">
+    <h3>🚨 سجل الأعطال</h3>
+    <div id="alertsList"></div>
+  </div>
+
+  <div class="section">
+    <h3>📬 اقتراحات المستخدمين (<span id="suggCount">0</span>)</h3>
+    <button class="btn-s blue" id="exportCsv" style="margin-bottom:10px">📥 تصدير CSV</button>
+    <div id="suggList"></div>
+  </div>
+
+  <div class="section">
+    <h3>📜 سجل نشاط الأدمن</h3>
+    <div id="logList"></div>
+  </div>
+
+  <div class="section">
+    <h3>🧩 إضافات مستقبلية (متغيرات مخصصة)</h3>
+    <p style="color:#9aa8c7;font-size:11px;margin-bottom:8px">ضيف أي مفتاح/قيمة هنا، والتطبيق بيقراهم تلقائياً في window.EB_EXTRAS بدون تعديل كود.</p>
+    <div id="extRows"></div>
+    <div class="row"><button class="btn-s blue" id="extAdd">+ ضيف متغير</button><button class="btn-s green" id="extSave">حفظ المتغيرات</button></div>
+    <!-- ===== EXTENSION SLOT: ضيف هنا أي قسم جديد للوحة مستقبلاً ===== -->
+  </div>
+
+  <div class="two">
+    <div class="section">
+      <h3>🔑 تغيير كلمة السر</h3>
+      <div class="row"><label>الحالية</label><input id="pwOld" type="password"></div>
+      <div class="row"><label>الجديدة</label><input id="pwNew" type="password"></div>
+      <button class="save-btn" id="pwSave">تغيير كلمة السر</button>
+    </div>
+    <div class="section">
+      <h3>💾 نسخ احتياطي وصيانة</h3>
+      <div class="row"><button class="btn-s gold" id="backupBtn">💾 تصدير نسخة كاملة JSON</button></div>
+      <div class="row"><button class="btn-s red" id="cleanPresence">🧹 تنظيف جلسات الأونلاين القديمة</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const FIREBASE_CONFIG={apiKey:"AIzaSyCI0TxS5tWwRPSSeonyXBFqM1PR0AQH7s0",authDomain:"ra3d-bet.firebaseapp.com",projectId:"ra3d-bet",storageBucket:"ra3d-bet.firebasestorage.app",messagingSenderId:"1047274909652",appId:"1:1047274909652:web:1cfae0af1f6dd86a65f041"};
+firebase.initializeApp(FIREBASE_CONFIG);
+const auth=firebase.auth(), db=firebase.firestore();
+const $=s=>document.querySelector(s);
+let allSugg=[], chartInst=null, tgCache=null, tgSentSugg=new Set(JSON.parse(sessionStorage.getItem('eb_tg_sugg')||'[]')), tgSentAlerts=new Set(JSON.parse(sessionStorage.getItem('eb_tg_alert')||'[]'));
+
+auth.onAuthStateChanged(user=>{
+  if(user){
+    if(!['admin@r3raebet.app','novaa118n@gmail.com'].includes((user.email||'').toLowerCase())){auth.signOut();$('#loginErr').textContent='مش مصرح لك.';return;}
+    $('#loginScreen').classList.add('hidden');$('#adminApp').classList.remove('hidden');
+    $('#adminEmail').textContent=user.email;
+    loadAll(); setInterval(poll,30000);
+  }
+});
+$('#loginBtn').onclick=async()=>{
+  $('#loginErr').textContent='';
+  try{ await auth.signInWithEmailAndPassword($('#loginEmail').value.trim(),$('#loginPass').value); }
+  catch(e){
+    let m='فشل الدخول';
+    if(e.code==='auth/invalid-credential'||e.code==='auth/wrong-password')m='كلمة المرور غلط';
+    else if(e.code==='auth/user-not-found')m='الإيميل مش موجود';
+    else if(e.code==='auth/operation-not-allowed')m='فعّل Email/Password من Firebase';
+    else if(e.code==='auth/too-many-requests')m='محاولات كتير، استنى شوية';
+    $('#loginErr').textContent=m;
+  }
+};
+function doSignOut(){auth.signOut();location.reload();}
+function log(action){ db.collection('adminLog').add({action,ts:Date.now(),email:(auth.currentUser&&auth.currentUser.email)||''}).catch(()=>{}); }
+
+/* ===== TELEGRAM ===== */
+async function getTg(){
+  if(tgCache)return tgCache;
+  const d=await db.collection('private').doc('telegram').get();
+  tgCache=d.exists?d.data():{};
+  return tgCache;
+}
+async function tgSend(text){
+  const t=await getTg();
+  if(!t||!t.token||!t.chatId){alert('اظبط إعدادات تليجرام الأول (Token + Chat ID)');return false;}
+  try{
+    const r=await fetch(`https://api.telegram.org/bot${t.token}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:t.chatId,text,parse_mode:'HTML'})});
+    if(!r.ok){console.warn('Telegram API error',await r.text());return false;}const body=await r.json().catch(()=>({}));return body.ok===true;
+  }catch(e){console.warn('Telegram send failed',e);return false;}
+}
+async function loadTelegramQueue(){
+  try{
+    const snap=await db.collection('telegramQueue').orderBy('queuedAt','desc').limit(10).get();
+    const rows=snap.docs.map(d=>{const x=d.data();return `<div class="log-item"><b>${esc(x.status||'pending')}</b> — ${esc(x.home||'')} × ${esc(x.away||'')} • ${esc(x.confidence||0)}% <span style="float:left">${new Date(x.sentAt||x.queuedAt||0).toLocaleString('ar-EG')}</span></div>`;}).join('');
+    $('#tgPredStatus').innerHTML=rows||'لا توجد توقعات في طابور الإرسال حتى الآن.';
+  }catch(e){$('#tgPredStatus').textContent='تعذر تحميل سجل الإرسال.';}
+}
+
+/* ===== LOADERS ===== */
+async function loadAll(){
+  await Promise.allSettled([loadCards(),loadChart(),loadLeaders(),loadGeo(),loadConfig(),loadSuggestions(),loadAlerts(),loadLog(),loadExt(),loadTelegramQueue()]);
+}
+async function poll(){
+  await Promise.allSettled([loadCards(),loadSuggestions(),loadAlerts(),loadTelegramQueue()]);
+  tgChecks();
+  autoReport();
+}
+async function loadCards(){
+  const today=new Date().toISOString().slice(0,10);
+  const [v,b,d,dl,dd,online]=await Promise.all([
+    db.collection('counters').doc('visits').get(),
+    db.collection('counters').doc('betViews').get(),
+    db.collection('counters').doc('downloads').get(),
+    db.collection('daily').doc(today).get(),
+    db.collection('counters').doc('sourcesHealth').get(),
+    db.collection('presence').where('lastSeen','>=',Date.now()-70000).get()
+  ]);
+  $('#cVisits').textContent=(v.data()&&v.data().total)||0;
+  $('#cBets').textContent=(b.data()&&b.data().total)||0;
+  $('#cDl').textContent=(d.data()&&d.data().total)||0;
+  $('#cNew').textContent=(dd.data()&&dd.data().newUsers)||0;
+  $('#cRet').textContent=(dd.data()&&dd.data().returning)||0;
+  $('#cOnline').textContent=online.size;
+  const hb=$('#healthBar');
+  if(dd.exists&&dd.data()){
+    const rates=allSugg.filter(s=>s.rating>0);
+    $('#cRate').textContent=rates.length?(rates.reduce((s,x)=>s+x.rating,0)/rates.length).toFixed(1)+' ★':'-';
+  }
+  if(dh=dl.data()){
+    if(dh.status==='ok'){hb.className='health ok';hb.innerHTML=`✅ المصادر سليمة — آخر فحص: ${new Date(dh.ts).toLocaleTimeString('ar-EG')} (${(dh.ok||[]).join(' + ')||'-'})`;}
+    else{hb.className='health down';hb.innerHTML=`🚨 المصادر واقعـة! آخر فحص: ${new Date(dh.ts).toLocaleTimeString('ar-EG')}`;}
+  }
+}
+async function loadChart(){
+  const days=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toISOString().slice(0,10));}
+  const docs=await Promise.all(days.map(d=>db.collection('daily').doc(d).get()));
+  const labels=days.map(d=>new Date(d).toLocaleDateString('ar-EG',{weekday:'short',day:'numeric'}));
+  const vis=docs.map(x=>(x.data()&&x.data().visits)||0);
+  const bets=docs.map(x=>(x.data()&&x.data().betViews)||0);
+  const ctx=$('#chartWeek').getContext('2d');
+  if(chartInst)chartInst.destroy();
+  chartInst=new Chart(ctx,{type:'line',data:{labels,datasets:[
+    {label:'زيارات',data:vis,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.15)',tension:.3,fill:true},
+    {label:'مشاهدات رهانات',data:bets,borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,.12)',tension:.3,fill:true}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9aa8c7'}}},scales:{y:{beginAtZero:true,ticks:{color:'#9aa8c7'},grid:{color:'rgba(255,255,255,.05)'}},x:{ticks:{color:'#9aa8c7'},grid:{color:'rgba(255,255,255,.05)'}}}}});
+}
+async function loadLeaders(){
+  const [mv,lv]=await Promise.all([
+    db.collection('matchViews').orderBy('count','desc').limit(8).get(),
+    db.collection('leagueViews').orderBy('count','desc').limit(8).get()
+  ]);
+  $('#topMatches').innerHTML=mv.docs.map(d=>`<div class="list-item"><b>${esc(d.data().title||d.id)}</b><span>${d.data().count} مشاهدة</span></div>`).join('')||'<p style="color:#9aa8c7;font-size:12px">لسه مفيش بيانات.</p>';
+  $('#topLeagues').innerHTML=lv.docs.map(d=>`<div class="list-item"><b>${esc(d.data().name||d.id)}</b><span>${d.data().count} مشاهدة</span></div>`).join('')||'<p style="color:#9aa8c7;font-size:12px">لسه مفيش بيانات.</p>';
+}
+function tzCountry(tz){
+  const m={'Africa/Cairo':'مصر 🇬','Africa/Riyadh':'السعودية 🇸🇦','Asia/Riyadh':'السعودية 🇸','Asia/Dubai':'الإمارات 🇦🇪','Asia/Qatar':'قطر 🇶🇦','Asia/Kuwait':'الكويت 🇰🇼','Africa/Casablanca':'المغرب 🇲🇦','Africa/Tunis':'تونس 🇹🇳','Africa/Algiers':'الجزائر 🇩🇿','Asia/Baghdad':'العراق 🇮🇶','Europe/Istanbul':'تركيا 🇹🇷','Europe/London':'بريطانيا 🇬🇧'};
+  return m[tz]||((tz||'غير معروف').split('/')[0]);
+}
+async function loadGeo(){
+  const snap=await db.collection('sessions').orderBy('lastSeen','desc').limit(300).get();
+  const geo={},dev={};
+  snap.forEach(d=>{const x=d.data();geo[tzCountry(x.tz)]=(geo[tzCountry(x.tz)]||0)+1;dev[x.dev||'؟']=(dev[x.dev||'؟']||0)+1;});
+  const g=Object.entries(geo).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const dv=Object.entries(dev).sort((a,b)=>b[1]-a[1]);
+  $('#geoList').innerHTML=g.map(x=>`<div class="list-item"><b>${esc(x[0])}</b><span>${x[1]} جلسة</span></div>`).join('')||'<p style="color:#9aa8c7;font-size:12px">لسه مفيش جلسات.</p>';
+  $('#devList').innerHTML=dv.map(x=>`<div class="list-item"><b>${esc(x[0])==='موبايل'?'📱 موبايل':'💻 كمبيوتر'}</b><span>${x[1]} جلسة</span></div>`).join('')||'<p style="color:#9aa8c7;font-size:12px">لسه مفيش جلسات.</p>';
+}
+async function loadConfig(){
+  const doc=await db.collection('config').doc('settings').get();
+  if(!doc.exists)return;
+  const d=doc.data();
+  $('#cfgMaint').checked=!!d.maintenance; $('#cfgMaintMsg').value=d.maintenanceMsg||'';
+  $('#cfgBanner').value=d.banner||''; $('#cfgHideGuide').checked=!!d.disableGuide;
+  $('#cfgVip').checked=!!d.vip;
+  $('#cfgSupEn').checked=!!(d.support&&d.support.enabled); $('#cfgSupText').value=(d.support&&d.support.text)||''; $('#cfgSupLink').value=(d.support&&d.support.link)||'';
+  (d.disabledMarkets||[]).forEach(k=>{const el=document.querySelector(`[data-mk="${k}"]`);if(el)el.checked=true;});
+  $('#cfgInboxEn').checked=!!(d.inbox&&d.inbox.active); $('#cfgInboxText').value=(d.inbox&&d.inbox.text)||'';
+  $('#hidMatches').value=(d.hiddenMatches||[]).join(', '); $('#hidLeagues').value=(d.hiddenLeagues||[]).join(', ');
+  const g=d.guide||{}; $('#gTitle').value=g.title||'';$('#gS1').value=g.s1||'';$('#gS2').value=g.s2||'';$('#gS3').value=g.s3||'';$('#gWarn').value=g.warn||'';$('#gBtn').value=g.btn||'';
+  const t=await getTg(); $('#tgToken').value=t.token||''; $('#tgChat').value=t.chatId||''; const ta=d.telegramAuto||{}; $('#tgPredEnabled').checked=ta.enabled===true; $('#tgPredMin').value=ta.minConfidence||75; $('#tgPredDaily').value=ta.dailyLimit||20; $('#tgPredTitle').value=ta.title||'🏆 RA3D BET | توقع جديد'; $('#tgPredNote').value=ta.note||'التوقعات إحصائية وليست ضمانًا للنتيجة.';
+}
+async function loadSuggestions(){
+  const snap=await db.collection('suggestions').orderBy('createdAt','desc').limit(100).get();
+  allSugg=[];snap.forEach(d=>allSugg.push(Object.assign({id:d.id},d.data())));
+  const unread=allSugg.filter(s=>!s.read&&s.status==='pending').length;
+  $('#cSugg').textContent=unread; $('#suggCount').textContent=allSugg.length;
+  const rates=allSugg.filter(s=>s.rating>0);
+  $('#cRate').textContent=rates.length?(rates.reduce((s,x)=>s+x.rating,0)/rates.length).toFixed(1)+' ★':'-';
+  renderSuggestions();
+}
+function renderSuggestions(){
+  const list=$('#suggList');
+  if(!allSugg.length){list.innerHTML='<p style="color:#9aa8c7;font-size:12px;text-align:center;padding:14px">لسه مفيش اقتراحات.</p>';return;}
+  list.innerHTML=allSugg.map(s=>{
+    const d=new Date(s.createdAt||0);
+    return `<div class="sugg-item ${s.read?'read':''}">
+      <div class="sugg-head"><b>${esc(s.name||'مجهول')} <span class="sugg-stars">${'★'.repeat(s.rating||0)}</span></b><small>${d.toLocaleString('ar-EG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</small></div>
+      <div class="sugg-msg">${esc(s.message)}</div>
+      ${s.reply?`<div class="sugg-msg" style="color:#86efac;background:rgba(34,197,94,.08);padding:7px;border-radius:9px">ردك: ${esc(s.reply)}</div>`:''}
+      <div class="sugg-actions">
+        ${!s.read?`<button class="btn-s" onclick="markRead('${s.id}')">✓ مقروء</button>`:''}
+        ${s.status!=='done'?`<button class="btn-s green" onclick="markDone('${s.id}')">✓✓ تم التنفيذ</button>`:''}
+        <button class="btn-s blue" onclick="replyTo('${s.id}')">💬 رد</button>
+        <button class="btn-s red" onclick="deleteSugg('${s.id}')">🗑️ حذف</button>
+      </div></div>`;
+  }).join('');
+}
+async function markRead(id){await db.collection('suggestions').doc(id).update({read:true});log('اقتراح: تعليم مقروء');loadSuggestions();}
+async function markDone(id){await db.collection('suggestions').doc(id).update({status:'done',read:true,doneAt:Date.now()});log('اقتراح: تم التنفيذ');loadSuggestions();}
+async function replyTo(id){const r=prompt('اكتب ردك:');if(!r)return;await db.collection('suggestions').doc(id).update({reply:r,read:true});log('اقتراح: رد');loadSuggestions();}
+async function deleteSugg(id){if(!confirm('متأكد من الحذف؟'))return;await db.collection('suggestions').doc(id).delete();log('اقتراح: حذف');loadSuggestions();}
+async function loadAlerts(){
+  const snap=await db.collection('alerts').orderBy('ts','desc').limit(10).get();
+  $('#alertsList').innerHTML=snap.docs.map(d=>{const x=d.data();return `<div class="list-item"><b>🚨 ${esc(x.msg||x.type)}</b><span>${new Date(x.ts).toLocaleString('ar-EG')}</span></div>`;}).join('')||'<p style="color:#9aa8c7;font-size:12px">مفيش أعطال مسجلة ✅</p>';
+}
+async function loadLog(){
+  const snap=await db.collection('adminLog').orderBy('ts','desc').limit(30).get();
+  $('#logList').innerHTML=snap.docs.map(d=>{const x=d.data();return `<div class="log-item"><b>${esc(x.action)}</b> — ${new Date(x.ts).toLocaleString('ar-EG')} (${esc(x.email||'')})</div>`;}).join('')||'<p style="color:#9aa8c7;font-size:12px">لسه مفيش نشاط.</p>';
+}
+
+/* ===== TELEGRAM CHECKS ===== */
+async function tgChecks(){
+  if($('#tgAutoSugg').checked){
+    for(const s of allSugg.filter(s=>!s.read&&s.status==='pending'&&!tgSentSugg.has(s.id))){
+      const ok=await tgSend(`📬 <b>اقتراح جديد</b>\n👤 ${s.name||'مجهول'} ${s.rating?'('+s.rating+'★)':''}\n💬 ${s.message}`);
+      if(ok){tgSentSugg.add(s.id);sessionStorage.setItem('eb_tg_sugg',JSON.stringify([...tgSentSugg]));}
+    }
+  }
+  if($('#tgAutoAlert').checked){
+    try{const snap=await db.collection('alerts').orderBy('ts','desc').limit(3).get();
+      for(const d of snap.docs){const x=d.data();
+        if(!tgSentAlerts.has(d.id)&&Date.now()-x.ts<120000){
+          const ok=await tgSend(`🚨 <b>تنبيه عطل</b>\n${x.msg||x.type}`);
+          if(ok){tgSentAlerts.add(d.id);sessionStorage.setItem('eb_tg_alert',JSON.stringify([...tgSentAlerts]));}
+        }}
+    }catch(e){console.warn('Telegram alert polling failed',e);}
+  }
+}
+async function sendReport(){
+  const y=new Date();y.setDate(y.getDate()-1);
+  const ys=y.toISOString().slice(0,10), ts=new Date().toISOString().slice(0,10);
+  const [yd,td,v,b]=await Promise.all([
+    db.collection('daily').doc(ys).get(),db.collection('daily').doc(ts).get(),
+    db.collection('counters').doc('visits').get(),db.collection('counters').doc('betViews').get()
+  ]);
+  const Y=yd.data()||{},T=td.data()||{};
+  const txt=`🌅 <b>تقرير 𝙍𝘼𝟯𝘿 𝘽𝙀𝙏</b>\n\n📆 أمس (${ys}):\n👥 زيارات: ${Y.visits||0}\n👁️ رهانات: ${Y.betViews||0}\n🆕 جدد: ${Y.newUsers||0} | 🔄 عائدون: ${Y.returning||0}\n\n📆 اليوم (${ts}):\n👥 زيارات: ${T.visits||0}\n👁️ رهانات: ${T.betViews||0}\n\n📊 الإجمالي:\n👥 ${(v.data()&&v.data().total)||0} | 👁️ ${(b.data()&&b.data().total)||0}\n📬 اقتراحات: ${allSugg.length}`;
+  const ok=await tgSend(txt);
+  alert(ok?'تم إرسال التقرير ✅':'فشل الإرسال — راجع إعدادات تليجرام');
+  if(ok)localStorage.setItem('eb_report_date',ts);
+}
+function autoReport(){
+  if(!$('#tgAutoReport').checked)return;
+  const ts=new Date().toISOString().slice(0,10);
+  if(localStorage.getItem('eb_report_date')===ts)return;
+  sendReport();
+}
+
+/* ===== SAVERS ===== */
+function showActionError(e,action){
+  const denied=e&&((e.code||'').includes('permission-denied')||(e.message||'').includes('Missing or insufficient permissions'));
+  const msg=denied?'Firebase رفض الكتابة. تأكد أن حساب الأدمن مصرح له في Firestore Rules: '+((auth.currentUser&&auth.currentUser.email)||'غير معروف'):(e&&e.message)||'تعذر تنفيذ الأمر';
+  const box=$('#actionStatus');box.textContent='❌ '+action+': '+msg;box.className='action-status err';box.classList.remove('hidden');setTimeout(()=>box.classList.add('hidden'),9000);
+  console.error(action,e);return msg;
+}
+async function adminWrite(work,action,button){try{await work();log(action);if(button)flash(button);return true;}catch(e){showActionError(e,action);return false;}}
+
+$('#cfgSave').onclick=async()=>{
+  const disabled=[];document.querySelectorAll('[data-mk]').forEach(el=>{if(el.checked)disabled.push(el.dataset.mk);});
+  await adminWrite(()=>db.collection('config').doc('settings').set({maintenance:$('#cfgMaint').checked,maintenanceMsg:$('#cfgMaintMsg').value.trim(),banner:$('#cfgBanner').value.trim(),disableGuide:$('#cfgHideGuide').checked,vip:$('#cfgVip').checked,support:{enabled:$('#cfgSupEn').checked,text:$('#cfgSupText').value.trim(),link:$('#cfgSupLink').value.trim()},disabledMarkets:disabled,updatedAt:Date.now()},{merge:true}),'تعديل الإعدادات الأساسية',$('#cfgSave'));
+};
+$('#inboxSave').onclick=async()=>{
+  await adminWrite(()=>db.collection('config').doc('settings').set({inbox:{active:$('#cfgInboxEn').checked,text:$('#cfgInboxText').value.trim(),id:String(Date.now())},updatedAt:Date.now()},{merge:true}),'إرسال رسالة Inbox',$('#inboxSave'));
+};
+const normKey=(a,b)=>(a+'|'+b).toLowerCase().replace(/\s+/g,'');
+$('#pinSet').onclick=async()=>{
+  const h=$('#pinHome').value.trim(),a=$('#pinAway').value.trim();
+  if(!h||!a){alert('اكتب اسم الفريقين');return;}
+  await adminWrite(()=>db.collection('config').doc('settings').set({pinnedKey:normKey(h,a),updatedAt:Date.now()},{merge:true}),'تثبيت مباراة اليوم: '+h+' × '+a,$('#pinSet'));
+};
+$('#pinClear').onclick=async()=>{await adminWrite(()=>db.collection('config').doc('settings').set({pinnedKey:'',updatedAt:Date.now()},{merge:true}),'إلغاء تثبيت المباراة',$('#pinClear'));};
+$('#hideSave').onclick=async()=>{
+  const hm=$('#hidMatches').value.split(',').map(s=>s.trim().toLowerCase().replace(/\s+/g,'')).filter(Boolean);
+  const hl=$('#hidLeagues').value.split(',').map(s=>s.trim()).filter(Boolean);
+  await adminWrite(()=>db.collection('config').doc('settings').set({hiddenMatches:hm,hiddenLeagues:hl,updatedAt:Date.now()},{merge:true}),'تحديث قوائم الإخفاء',$('#hideSave'));
+};
+$('#guideSave').onclick=async()=>{
+  await adminWrite(()=>db.collection('config').doc('settings').set({guide:{title:$('#gTitle').value.trim(),s1:$('#gS1').value.trim(),s2:$('#gS2').value.trim(),s3:$('#gS3').value.trim(),warn:$('#gWarn').value.trim(),btn:$('#gBtn').value.trim()},updatedAt:Date.now()},{merge:true}),'تعديل نصوص الإرشادات',$('#guideSave'));
+};
+$('#tgPredSave').onclick=async()=>{await adminWrite(()=>db.collection('config').doc('settings').set({telegramAuto:{enabled:$('#tgPredEnabled').checked,minConfidence:Math.min(99,Math.max(1,Number($('#tgPredMin').value)||75)),dailyLimit:Math.min(100,Math.max(1,Number($('#tgPredDaily').value)||20)),title:$('#tgPredTitle').value.trim()||'🏆 RA3D BET | توقع جديد',note:$('#tgPredNote').value.trim()||'التوقعات إحصائية وليست ضمانًا للنتيجة.'},updatedAt:Date.now()},{merge:true}),'حفظ إعدادات إرسال التوقعات',$('#tgPredSave'));};
+$('#tgSave').onclick=async()=>{
+  const ok=await adminWrite(()=>db.collection('private').doc('telegram').set({token:$('#tgToken').value.trim(),chatId:$('#tgChat').value.trim(),channelLink:'https://t.me/Ech0_k'},{merge:true}),'تحديث إعدادات تليجرام',$('#tgSave'));if(ok)tgCache=null;
+};
+$('#tgTest').onclick=async()=>{const ok=await tgSend('✅ رسالة اختبار من لوحة 𝙍𝘼𝟯𝘿 𝘽𝙀𝙏');alert(ok?'وصلت؟ ✅':'فشل ❌');};
+$('#tgReport').onclick=sendReport;
+$('#pwSave').onclick=async()=>{
+  const u=auth.currentUser;
+  if(!$('#pwOld').value||!$('#pwNew').value){alert('كمّل الخانتين');return;}
+  if($('#pwNew').value.length<8){alert('الكلمة الجديدة لازم 8 أحرف على الأقل');return;}
+  try{
+    const cred=firebase.auth.EmailAuthProvider.credential(u.email,$('#pwOld').value);
+    await u.reauthenticateWithCredential(cred);
+    await u.updatePassword($('#pwNew').value);
+    log('تغيير كلمة السر');alert('تم التغيير ✅');$('#pwOld').value='';$('#pwNew').value='';
+  }catch(e){alert('فشل: '+e.message);}
+};
+$('#backupBtn').onclick=async()=>{
+  const [c,d,s,cfg,mv,lv]=await Promise.all([
+    db.collection('counters').get(),db.collection('daily').limit(90).get(),
+    db.collection('suggestions').limit(500).get(),db.collection('config').get(),
+    db.collection('matchViews').limit(200).get(),db.collection('leagueViews').get()
+  ]);
+  const pack={exportedAt:new Date().toISOString(),counters:{},daily:{},suggestions:[],config:{},matchViews:{},leagueViews:{}};
+  c.forEach(x=>pack.counters[x.id]=x.data());d.forEach(x=>pack.daily[x.id]=x.data());
+  s.forEach(x=>pack.suggestions.push(Object.assign({id:x.id},x.data())));
+  cfg.forEach(x=>pack.config[x.id]=x.data());mv.forEach(x=>pack.matchViews[x.id]=x.data());lv.forEach(x=>pack.leagueViews[x.id]=x.data());
+  const blob=new Blob([JSON.stringify(pack,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ra3dbet-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+  log('تصدير نسخة احتياطية');
+};
+$('#cleanPresence').onclick=async()=>{
+  const snap=await db.collection('presence').where('lastSeen','<',Date.now()-300000).get();
+  const batch=db.batch();let n=0;
+  snap.forEach(d=>{batch.delete(d.ref);n++;});
+  if(n){await batch.commit();}
+  log('تنظيف حضور قديم ('+n+')');alert('تم حذف '+n+' جلسة قديمة ✅');loadCards();
+};
+$('#exportCsv').onclick=()=>{
+  if(!allSugg.length){alert('مفيش اقتراحات');return;}
+  const rows=[['الاسم','التقييم','الرسالة','التاريخ','الحالة','الرد']];
+  allSugg.forEach(s=>rows.push([s.name||'',s.rating||'',(s.message||'').replace(/\n/g,' '),new Date(s.createdAt||0).toLocaleString('ar-EG'),s.status||'',s.reply||'']));
+  const csv='\uFEFF'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ra3dbet-suggestions.csv';a.click();
+};
+
+/* ===== EXTRAS SLOT ===== */
+function extRow(k,v){
+  const div=document.createElement('div');div.className='ext-row';
+  div.innerHTML=`<input placeholder="المفتاح (مثال: promoCode)" value="${esc(k||'')}"><input placeholder="القيمة" value="${esc(v||'')}"><button class="btn-s red" onclick="this.parentNode.remove()">✕</button>`;
+  $('#extRows').appendChild(div);
+}
+$('#extAdd').onclick=()=>extRow('','');
+$('#extSave').onclick=async()=>{
+  const extras={};
+  document.querySelectorAll('#extRows .ext-row').forEach(r=>{
+    const k=r.children[0].value.trim(),v=r.children[1].value.trim();
+    if(k)extras[k]=v;
+  });
+  await db.collection('config').doc('settings').set({extras,updatedAt:Date.now()},{merge:true});
+  log('حفظ متغيرات مخصصة');flash($('#extSave'));
+};
+async function loadExt(){
+  $('#extRows').innerHTML='';
+  const d=await db.collection('config').doc('settings').get();
+  const ex=(d.exists&&d.data().extras)||{};
+  const keys=Object.keys(ex);
+  if(keys.length)keys.forEach(k=>extRow(k,ex[k]));else extRow('','');
+}
+function flash(btn){btn.textContent='✓ تم الحفظ';btn.classList.add('saved');setTimeout(()=>{btn.textContent=btn.dataset.orig||'حفظ';btn.classList.remove('saved');},1600);}
+document.querySelectorAll('.save-btn').forEach(b=>b.dataset.orig=b.textContent);
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+</script>
+<div class="developer-credit" aria-label="المطور">المطور R3</div>
+</body>
+</html>
