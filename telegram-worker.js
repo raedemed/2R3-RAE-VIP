@@ -13,13 +13,23 @@ function parseServiceAccount(raw) {
   if (!account || typeof account !== 'object' || !account.private_key || !account.client_email) {
     throw new Error('Firebase service-account JSON is missing private_key or client_email');
   }
-  // GitHub secrets are sometimes saved with literal "\\n" sequences or CRLFs.
-  // Normalize both forms before firebase-admin hands the key to OpenSSL.
-  account.private_key = String(account.private_key)
-    .replace(/\\n/g, '\n')
+  // GitHub secrets are sometimes saved with literal "\\n" sequences, escaped
+  // unicode line breaks, CRLFs, or extra text around the PEM block. Normalize
+  // and isolate the PEM before firebase-admin hands it to OpenSSL.
+  let privateKey = String(account.private_key)
+    .replace(/\\+n/g, '\n')
+    .replace(/\\+r/g, '\r')
+    .replace(/\\u000a/gi, '\n')
+    .replace(/\\u000d/gi, '\r')
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n')
-    .trim() + '\n';
+    .trim();
+  const pemStart = privateKey.indexOf('-----BEGIN ');
+  const pemEnd = privateKey.indexOf('-----END PRIVATE KEY-----');
+  if (pemStart >= 0 && pemEnd >= pemStart) {
+    privateKey = privateKey.slice(pemStart, pemEnd + '-----END PRIVATE KEY-----'.length);
+  }
+  account.private_key = privateKey.replace(/[ \t]+\n/g, '\n').trim() + '\n';
   return account;
 }
 const serviceAccount = parseServiceAccount(rawServiceAccount.startsWith('{')
