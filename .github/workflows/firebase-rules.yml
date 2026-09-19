@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - firestore.rules
+      - firebase.json
       - .github/workflows/firebase-rules.yml
   workflow_dispatch:
 
