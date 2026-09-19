@@ -267,8 +267,8 @@ async function tgSend(text){
 }
 async function loadTelegramQueue(){
   try{
-    const snap=await db.collection('telegramQueue').orderBy('queuedAt','desc').limit(10).get();
-    const rows=snap.docs.map(d=>{const x=d.data();return `<div class="log-item"><b>${esc(x.status||'pending')}</b> — ${esc(x.home||'')} × ${esc(x.away||'')} • ${esc(x.confidence||0)}% <span style="float:left">${new Date(x.sentAt||x.queuedAt||0).toLocaleString('ar-EG')}</span></div>`;}).join('');
+    const snap=await db.collection('suggestions').where('system','==','telegramPrediction').limit(50).get();
+    const rows=snap.docs.sort((a,b)=>Number(b.data().sentAt||b.data().queuedAt||b.data().createdAt||0)-Number(a.data().sentAt||a.data().queuedAt||a.data().createdAt||0)).slice(0,10).map(d=>{const x=d.data();return `<div class="log-item"><b>${esc(x.status||'pending')}</b> — ${esc(x.home||'')} × ${esc(x.away||'')} • ${esc(x.confidence||0)}% <span style="float:left">${new Date(x.sentAt||x.queuedAt||x.createdAt||0).toLocaleString('ar-EG')}</span></div>`;}).join('');
     $('#tgPredStatus').innerHTML=rows||'لا توجد توقعات في طابور الإرسال حتى الآن.';
   }catch(e){$('#tgPredStatus').textContent='تعذر تحميل سجل الإرسال.';}
 }

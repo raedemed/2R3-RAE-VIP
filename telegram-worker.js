@@ -72,12 +72,12 @@ async function main() {
   let sentCount = sentToday.size;
   if (sentCount >= dailyLimit) return console.log('Daily Telegram limit reached');
 
-  const queueSnap = await db.collection('telegramQueue').where('status', '==', 'pending').limit(50).get();
+  const queueSnap = await db.collection('suggestions').where('system', '==', 'telegramPrediction').where('status', '==', 'pending').limit(50).get();
   const queue = queueSnap.docs.sort((a, b) => Number(a.data().queuedAt || 0) - Number(b.data().queuedAt || 0));
   for (const item of queue) {
     if (sentCount >= dailyLimit) break;
     const claim = await db.runTransaction(async tx => {
-      const ref = db.collection('telegramQueue').doc(item.id);
+      const ref = db.collection('suggestions').doc(item.id);
       const snap = await tx.get(ref);
       const data = snap.data() || {};
       if (!snap.exists || data.status !== 'pending') return false;
@@ -97,11 +97,11 @@ async function main() {
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok || !result.ok) {
-      await db.collection('telegramQueue').doc(item.id).update({ status: 'pending', lastError: result.description || `HTTP ${response.status}`, failedAt: Date.now() });
+      await db.collection('suggestions').doc(item.id).update({ status: 'pending', lastError: result.description || `HTTP ${response.status}`, failedAt: Date.now() });
       console.error('Telegram send failed', result);
       continue;
     }
-    await db.collection('telegramQueue').doc(item.id).update({ status: 'sent', sentAt: Date.now(), telegramMessageId: result.result?.message_id || null });
+    await db.collection('suggestions').doc(item.id).update({ status: 'sent', sentAt: Date.now(), telegramMessageId: result.result?.message_id || null });
     await db.collection('telegramSent').doc(item.id).set({ queueId: item.id, day, sentAt: Date.now(), telegramMessageId: result.result?.message_id || null });
     sentCount++;
     console.log(`Sent ${item.id}`);
