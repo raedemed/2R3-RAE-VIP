@@ -274,6 +274,8 @@ async function loadTelegramQueue(){
 }
 
 /* ===== LOADERS ===== */
+function safeFsGet(query,label){return query.get().catch(function(e){console.warn(label||'Firestore query failed',e.code||e.message||e);return {exists:false,size:0,docs:[],data:function(){return {};}};});}
+
 async function loadAll(){
   await Promise.allSettled([loadCards(),loadChart(),loadLeaders(),loadGeo(),loadConfig(),loadSuggestions(),loadAlerts(),loadLog(),loadExt(),loadTelegramQueue()]);
 }
@@ -285,12 +287,12 @@ async function poll(){
 async function loadCards(){
   const today=new Date().toISOString().slice(0,10);
   const [v,b,d,dl,dd,online]=await Promise.all([
-    db.collection('counters').doc('visits').get(),
-    db.collection('counters').doc('betViews').get(),
-    db.collection('counters').doc('downloads').get(),
-    db.collection('daily').doc(today).get(),
-    db.collection('counters').doc('sourcesHealth').get(),
-    db.collection('presence').where('lastSeen','>=',Date.now()-70000).get()
+    safeFsGet(db.collection('counters').doc('visits'),'visits'),
+    safeFsGet(db.collection('counters').doc('betViews'),'betViews'),
+    safeFsGet(db.collection('counters').doc('downloads'),'downloads'),
+    safeFsGet(db.collection('daily').doc(today),'daily'),
+    safeFsGet(db.collection('counters').doc('sourcesHealth'),'sourcesHealth'),
+    safeFsGet(db.collection('presence').where('lastSeen','>=',Date.now()-70000),'presence')
   ]);
   $('#cVisits').textContent=(v.data()&&v.data().total)||0;
   $('#cBets').textContent=(b.data()&&b.data().total)||0;
@@ -310,7 +312,7 @@ async function loadCards(){
 }
 async function loadChart(){
   const days=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toISOString().slice(0,10));}
-  const docs=await Promise.all(days.map(d=>db.collection('daily').doc(d).get()));
+  const docs=await Promise.all(days.map(d=>safeFsGet(db.collection('daily').doc(d),'daily chart')));
   const labels=days.map(d=>new Date(d).toLocaleDateString('ar-EG',{weekday:'short',day:'numeric'}));
   const vis=docs.map(x=>(x.data()&&x.data().visits)||0);
   const bets=docs.map(x=>(x.data()&&x.data().betViews)||0);
@@ -323,8 +325,8 @@ async function loadChart(){
 }
 async function loadLeaders(){
   const [mv,lv]=await Promise.all([
-    db.collection('matchViews').orderBy('count','desc').limit(8).get(),
-    db.collection('leagueViews').orderBy('count','desc').limit(8).get()
+    safeFsGet(db.collection('matchViews').orderBy('count','desc').limit(8),'matchViews'),
+    safeFsGet(db.collection('leagueViews').orderBy('count','desc').limit(8),'leagueViews')
   ]);
   $('#topMatches').innerHTML=mv.docs.map(d=>`<div class="list-item"><b>${esc(d.data().title||d.id)}</b><span>${d.data().count} مشاهدة</span></div>`).join('')||'<p style="color:#9aa8c7;font-size:12px">لسه مفيش بيانات.</p>';
   $('#topLeagues').innerHTML=lv.docs.map(d=>`<div class="list-item"><b>${esc(d.data().name||d.id)}</b><span>${d.data().count} مشاهدة</span></div>`).join('')||'<p style="color:#9aa8c7;font-size:12px">لسه مفيش بيانات.</p>';
@@ -334,7 +336,7 @@ function tzCountry(tz){
   return m[tz]||((tz||'غير معروف').split('/')[0]);
 }
 async function loadGeo(){
-  const snap=await db.collection('sessions').orderBy('lastSeen','desc').limit(300).get();
+  const snap=await safeFsGet(db.collection('sessions').orderBy('lastSeen','desc').limit(300),'sessions');
   const geo={},dev={};
   snap.forEach(d=>{const x=d.data();geo[tzCountry(x.tz)]=(geo[tzCountry(x.tz)]||0)+1;dev[x.dev||'؟']=(dev[x.dev||'؟']||0)+1;});
   const g=Object.entries(geo).sort((a,b)=>b[1]-a[1]).slice(0,8);
