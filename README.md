@@ -22,3 +22,9 @@
 النسخة الحالية تحتوي على منطق المتصفح وتستخدم معاملة قراءة ثم تحديث للكود. للحماية الاحترافية من تغيير ساعة الجهاز أو التلاعب بطلبات Firestore، يجب قبل النشر تطبيق قواعد Firestore أو Cloud Function تتحقق من الكود وتستهلكه ذريًا على الخادم، وتمنع الكتابة المباشرة من المستخدمين. كما يجب اختبار صلاحيات الأدمن على مشروع Firebase الفعلي وعدم الاعتماد على إخفاء الواجهة أو فحص البريد داخل JavaScript وحده.
 
 لم يتم تغيير مشروع Firebase الفعلي، ولم يتم وضع رقم Vodafone Cash حقيقي، ولم يتم نشر أي ملف.
+
+## 𝙍𝘼𝟯𝘿 𝘽𝙀𝙏 publishing notes
+
+The frontend identity is 𝙍𝘼𝟯𝘿 𝘽𝙀𝙏, developer R3, with Telegram https://t.me/Ech0_k and Firebase project `ra3d-bet`. The privacy policy is an independent project-specific page.
+
+AdSense is prepared with a placeholder publisher ID `ca-pub-XXXXXXXXXXXXXXXX`. Replace it only with the owner's own AdSense publisher ID after Google approves the site. The previous publisher ID from the source project was intentionally not reused.

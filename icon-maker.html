@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>تصغير الأيقونة</title>
+<style>body{background:#050810;color:#fff;font-family:sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;text-align:center;padding:20px}
+button{background:#22c55e;border:0;color:#04120a;font-weight:800;font-size:18px;padding:16px 30px;border-radius:16px;margin:10px}
+p{color:#9aa8c7}</style></head>
+<body>
+<div>
+<h2>أداة تصغير أيقونة Egypt Bet</h2>
+<p>دوس الزرار واختار صورة الأيقونة الكبيرة، وهتنزل نسخة صغيرة جاهزة للموقع تلقائياً</p>
+<button onclick="pick.click()">📥 اختار الأيقونة الكبيرة</button>
+<input type="file" id="pick" accept="image/*" hidden>
+<p id="st"></p>
+</div>
+<script>
+pick.onchange=e=>{
+ const f=e.target.files[0]; if(!f)return;
+ st.textContent='جاري التصغير...';
+ const img=new Image();
+ img.onload=()=>{
+  const c=document.createElement('canvas'); c.width=512; c.height=512;
+  const x=c.getContext('2d');
+  const s=Math.min(img.width,img.height);
+  x.drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,512,512);
+  c.toBlob(b=>{
+   const a=document.createElement('a');
+   a.href=URL.createObjectURL(b);
+   a.download='egyptbet-icon-512.jpg';
+   a.click();
+   st.textContent='تمام! الحجم الجديد: '+Math.round(b.size/1024)+'KB — ارفعها في WebIntoApp';
+  },'image/jpeg',0.85);
+ };
+ img.src=URL.createObjectURL(f);
+};
+</script>
+</body>
+</html>
