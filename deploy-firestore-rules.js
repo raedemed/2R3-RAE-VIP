@@ -16,9 +16,9 @@ async function main() {
   });
   const rulesetBody = await rulesetResponse.json();
   if (!rulesetResponse.ok) throw new Error(`Ruleset create failed: ${JSON.stringify(rulesetBody)}`);
-  const releaseResponse = await fetch('https://firebaserules.googleapis.com/v1/projects/ra3d-bet/releases?releaseId=cloud.firestore', {
+  const releaseResponse = await fetch('https://firebaserules.googleapis.com/v1/projects/ra3d-bet/releases', {
     method: 'POST', headers,
-    body: JSON.stringify({ name: 'projects/ra3d-bet/releases/cloud.firestore', rulesetName: rulesetBody.name })
+    body: JSON.stringify({ name: 'projects/ra3d-bet/releases/cloud.firestore', releaseId: 'cloud.firestore', rulesetName: rulesetBody.name })
   });
   const releaseBody = await releaseResponse.json();
   if (!releaseResponse.ok) throw new Error(`Release failed: ${JSON.stringify(releaseBody)}`);
