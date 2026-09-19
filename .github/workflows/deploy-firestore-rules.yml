@@ -1,0 +1,31 @@
+name: Deploy Firestore rules via API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - firestore.rules
+      - deploy-firestore-rules.js
+      - package.json
+      - package-lock.json
+      - .github/workflows/deploy-firestore-rules.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm install --no-audit --no-fund
+      - name: Deploy rules through Firebase Rules API
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: npm run deploy-rules
